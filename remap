@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Remap symbolic link LINK to TARGET
+
+if [ -z "$1" -o -z "$2" ]; then
+  echo "Usage: $(basename $0) TARGET LINK"
+  echo 
+  echo "TARGET - the thing you want the symbolic link to point to"
+  echo "LINK   - the symbolic link"
+  exit 1
+fi
+
+if [ ! -e "$1" ]; then
+  echo "TARGET: $1 doesn't exist"
+  exit 1
+fi
+
+TARGET=$1
+LINK=$2
+
+[ -h $LINK ] && rm $LINK
+if [ -e $LINK ]; then
+  echo "$LINK already exists and will not be happy about this." 
+  exit 1
+fi
+
+ln -fs $TARGET $LINK
+ls -l $LINK | awk -v mylink=$LINK '{split($0, a, mylink); printf("link: %s%s\n", mylink, a[2])}'
+
