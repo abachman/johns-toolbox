@@ -24,7 +24,7 @@
 # the benefit of the cache.
 # 
 
-export COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
+# export COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
 opt=$1
 
 function set_bc_props {
@@ -82,5 +82,6 @@ _capcomplete() {
 
 complete -o default -o nospace -F _rakecomplete rake
 complete -o default -o nospace -F _rakecomplete raket
+complete -o default -o nospace -F _rakecomplete rakes
 complete -o default -o nospace -F _scriptgencomplete generate
 complete -o default -o nospace -F _capcomplete cap

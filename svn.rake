@@ -1,75 +1,55 @@
-####################################################
-# Tasks to help with svn in Ruby on Rails projects #
-####################################################
+#!/usr/bin/env ruby
+
 require 'readline'
 
-namespace :svn do
-  # I load stories twice to ensure that story purging is effective.
-  desc "Check to ensure a clean commit"
-  task :check => [
-    "db:drop", "db:create", "db:migrate",
-    "db:stories", "db:stories", "test:all"
-  ] do
-    if (unadded = `svn st | grep ^?`).size > 0
-      $stderr.write "\nThe following files have not been committed to SVN:\n"
-      $stderr.write unadded
-      $stderr.write "Ensure that the proper svn:ignore flags have been set up\n"
-      $stderr.write "and that you are not forgetting to commit any files\n\n"
-      $stderr.flush
-      return false
-    end   
-  end
-
-  desc "Adds all \"?\" SVN files to SVN"
-  task :add do
-    files = `svn st | grep ^? | sed s/?\\s*//`.split
-    if files.size > 0
-      files.each do |file|
-        puts "adding #{file}"
-        `svn add #{file}`
-      end
+files = `svn st | grep ^? | awk '{print $2}'`.split
+path, url = `svn info | grep -P '^Path|^URL'`.split("\n")
+puts path
+puts url
+puts "Looking at \n\t#{files.join("\n\t")}"
+if files.size > 0
+  # set ignores
+  count = files.size
+  n = 1
+  # group files by directory
+  groups = {}
+  files.each do |f|
+    dir, file = File.split(f)
+    if groups.include? dir
+      groups[dir] << file
     else
-      $stdout.write "No files to add\n"; $stdout.flush
+      groups[dir] = [file]
     end
   end
-  
-  desc "Interactive svn ignore property setting" 
-  task :ignore do
-    files = `svn st | grep ^? | awk '{print $2}'`.split
-    if files.size > 0
-      count = files.size
-      n = 1
-      # group files by directory
-      groups = {}
-      files.each do |f|
-        dir, file = File.split(f)
-        if groups.include? dir
-          groups[dir] << file
-        else
-          groups[dir] = [file]
-        end
+  quit = false
+  groups.each_pair do |dir, fs|
+    for file in fs
+      puts "[#{n} of #{count}] #{File.directory?(File.join(dir, fs)) ? "directory" : "file"} #{File.join(dir, file)} ([i]gnore|[A]dd|[s]kip|[q]uit)"
+      line = Readline::readline '> '
+      choice = line.downcase.strip[0, 1]
+      case choice
+      when 'i'
+        puts "IGNORING"
+        `svn propset svn:ignore #{file} #{dir}`
+      when 'a', ''
+        puts "adding #{File.join(dir, file)}"
+        `svn add #{File.join(dir, file)}`
+      when 's'
+        puts "skipping #{File.join(dir, file)}" 
+      when 'q'
+        quit = true
+        break
       end
-      quit = false
-      groups.each_pair do |dir, fs|
-        for file in fs
-          puts "[#{n} of #{count}] Ignore #{File.directory?(File.join(dir, fs)) ? "directory" : "file"} #{File.join(dir, file)}? (y/N/q)"
-          line = Readline::readline '> '
-          if line.downcase.strip == 'y'
-            puts "IGNORING"
-            `svn propset svn:ignore #{file} #{dir}`
-          elsif line.downcase.strip == 'q'
-            quit = true
-            break
-          end
-          n += 1
-          puts
-        end
-        break if quit
-      end
-    else
-      $stdout.write "No files to ignore\n"; $stdout.flush
+      n += 1
     end
+    break if quit
   end
-
+  # Add all non-ignored files.
+#  `svn st | grep ^? | awk '{print $2}'`.split.each do |file|
+#     puts "adding #{file}"
+#     `svn add #{file}`
+else
+  $stdout.write "No files to ignore\n"; $stdout.flush
 end
+
 

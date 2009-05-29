@@ -22,32 +22,54 @@ if files.size > 0
     end
   end
   quit = false
-  groups.each_pair do |dir, fs|
-    for file in fs
-      puts "[#{n} of #{count}] #{File.directory?(File.join(dir, fs)) ? "directory" : "file"} #{File.join(dir, file)} ([i]gnore|[A]dd|[s]kip|[q]uit)"
+  # batch all ignore files in a given directory and append to the svn:ignore file.
+#  batch_ignore = {}
+  groups.each_pair do |dir, file_list|
+#    batch_ignore[dir] = []
+    for file in file_list
+      is_dir = File.directory?(File.join(dir, file))
+      full_file = File.join(dir, file)
+      puts "[#{n} of #{count}] #{is_dir ? "directory" : "file"} #{full_file} ([A]dd|[s]kip|[q]uit)"
       line = Readline::readline '> '
       choice = line.downcase.strip[0, 1]
       case choice
-      when 'y'
-        puts "IGNORING"
-        `svn propset svn:ignore #{file} #{dir}`
+#      when 'i'
+#        puts "ignoring #{full_file}"
+#        batch_ignore[dir] << file
+#        if is_dir 
+#          puts ""
+#          `svn propset svn:ignore #{File.join(dir, file)} .`
+#        else
+#          puts "svn propset svn:ignore #{file} ./#{dir}"
+#          `svn propset svn:ignore #{file} #{dir}`
+#        end
+      when 'a', ''
+        puts "adding #{full_file}"
+        `svn add #{full_file}`
+      when 's'
+        puts "skipping #{full_file}" 
       when 'q'
         quit = true
         break
-      when 'a', ''
-        puts "adding #{File.join(dir, file)}"
-        `svn add #{File.join(dir, file)}`
-      when 's'
-        puts "skipping #{File.join(dir, file)}" 
       end
       n += 1
     end
     break if quit
   end
-  # Add all non-ignored files.
-#  `svn st | grep ^? | awk '{print $2}'`.split.each do |file|
-#     puts "adding #{file}"
-#     `svn add #{file}`
+#  # append ignores to .svnignore
+#  batch_ignore.keys.each do |p|
+#    ig_file = File.join(p, '.svnignore')
+#    if !File.exist? '.svnignore'
+#      ign = File.new(ig_file, 'w')
+#      ign << ".svnignore\n"
+#    else
+#      ign = File.new(ig_file, 'a')
+#    end
+#    ign << batch_ignore[p].join("\n")
+#    puts "svn propset svn:ignore -F #{ig_file} #{p}"
+#    `svn propset svn:ignore -F #{ig_file} #{p}`
+#    ign.close
+#  end
 else
   $stdout.write "No files to ignore\n"; $stdout.flush
 end

@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+require 'inotify'
+require 'fileutils'
+require 'rubygems'
+begin
+  require 'rdiscount'
+  BlueCloth = RDiscount
+rescue LoadError
+  require 'bluecloth'
+end
+
+def lockname f
+  ".#{f}.lock"
+end
+
+# Make documentation file
+def make_doc f
+  doc = BlueCloth.new(File.new(f).read).to_html
+  tmpl = <<-EOS
+  <html>
+    <head>
+      <link href="docs.css" type="text/css" rel="stylesheet" />
+    </head>   
+    <body>
+      <div class="content">
+        #{ doc }
+      </div>
+    </body>
+  </html>
+  EOS
+  File.new(File.join('doc', f.split('.')[0] + ".html"), 'w').write(tmpl)
+  sleep(2)
+
+  FileUtils.rm(lockname(f))
+end
+
+puts "loading stylesheets..."
+
+FileUtils.mkdir_p('doc')
+FileUtils.cp(File.join('public', 'stylesheets', 'docs.css'), 
+             File.join('doc', 'docs.css'))
+
+puts "finding files..."
+
+filelist = []
+Dir.new('.').each do |f|
+  next unless File.file?(f)
+  (filelist << f) if (/.+\.md$|.+\.markdown$|^[A-Z]+$/ =~ f)
+end
+
+i = Inotify.new
+
+# Define inotify response behavior
+t = Thread.new do
+	i.each_event do |ev|
+    file = filelist[ev.wd - 1]
+    if !(file.nil? or File.exist?(lockname(file)))
+      puts "generating docs for #{file}"
+      # pending request, protect against vim quick double write
+      FileUtils.touch(lockname(file))
+      make_doc(filelist[ev.wd - 1])
+    end
+	end
+end
+
+for file in filelist
+  puts "  watching #{file}"
+  i.add_watch(file, Inotify::MODIFY)
+end 
+
+t.join
