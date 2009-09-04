@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# take me straight to the relevant RAILS_ROOT
+
+CURRENT_PWD=`pwd`
+FAILED_RR=0
+# Drop down the path until we hit a directory containing
+# "app" "config" "log" and "test"
+until [[ "$(ls)" =~ ^app.*config.*log.*test ]]; do
+  cd ..
+  if [ $(pwd) = / ]; then
+    FAILED_RR=1  
+    break
+  fi
+done
+if [ $FAILED_RR -eq 1 ]; then
+  cd $CURRENT_PWD
+fi
