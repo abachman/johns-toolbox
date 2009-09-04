@@ -22,9 +22,8 @@
 # Now, everytime you try to autocomplete, you'll get the appropriate options.  The first 
 # time in a given directory will be slow, but all subsequent <tab> completions will get 
 # the benefit of the cache.
-# 
+# source ~/.bashrc && rm /home/adam/.bash-complete/rake-*
 
-# export COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
 opt=$1
 
 function set_bc_props {
@@ -43,19 +42,34 @@ if [ "$opt" = "clear" ]; then
   rm $BC/*
 fi
 
+have()
+{
+	unset -v have
+	PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin type $1 &>/dev/null &&
+		have="yes"
+}
+
+have rake && {
 _rakecomplete() {
   COMPREPLY=()   
   if [ -f ./Rakefile ]; then
     set_bc_props rake  
     if [ ! -f $BC/$FNAME ]; then
       #echo "generating rake completions"
-      rake -T | awk 'NR != 1 {gsub(/:/, "\:", $2); print $2}' > $BC/$FNAME
+      rake -T | awk 'NR != 1 {print $2}' > $BC/$FNAME
     fi
-    COMPREPLY=($(compgen -W "`cat $BC/$FNAME`" --  ${COMP_WORDS[COMP_CWORD]}))
-    #complete -C "cat $BC/$FNAME" rake
+   
+    # Borrowed from /etc/bash_completion : _scp() function
+    cur=`_get_cword ":"`
+    COMPREPLY=( $(compgen -W "`cat $BC/$FNAME`" -- $cur) )
   fi
   return 0
 }
+complete -o nospace -F _rakecomplete rake
+complete -o nospace -F _rakecomplete raket
+complete -o nospace -F _rakecomplete rakes
+}
+
 _scriptgencomplete() {
   COMPREPLY=()
   if [ -f ./script/generate ]; then
@@ -68,6 +82,9 @@ _scriptgencomplete() {
   fi
   return 0
 }
+complete -o default -o nospace -F _scriptgencomplete generate
+
+have cap && {
 _capcomplete() {
   if [ -f ./Capfile ]; then
     set_bc_props cap   
@@ -79,9 +96,6 @@ _capcomplete() {
   fi 
   return 0
 }
-
-complete -o default -o nospace -F _rakecomplete rake
-complete -o default -o nospace -F _rakecomplete raket
-complete -o default -o nospace -F _rakecomplete rakes
-complete -o default -o nospace -F _scriptgencomplete generate
 complete -o default -o nospace -F _capcomplete cap
+}
+
