@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+# vim: set filetype=ruby:
+
+require 'rubygems'
+require 'hpricot'
+
+class SvnLog
+  attr_accessor :authors
+  attr_accessor :entries
+  attr_accessor :max_author
+  
+  # Enumerable of bash colors. Works best on dark background.
+  COLORS = [31, 32, 33, 34, 35, 36].cycle
+
+  def initialize; parse_log; end
+
+  def log_xml 
+    @log_xml ||= `svn log --xml`.chomp
+  end
+
+  def parse_log 
+    doc, @entries =  Hpricot::XML(log_xml), []
+    (doc/:log/:logentry).each do |entry|
+      msg = (entry/:msg).text
+      msg = msg.split("\n").first.chomp.slice(0, 60)
+      @entries << {:msg => msg, :author => (entry/:author).text, :rev => entry.attributes['revision']}
+    end
+  end 
+
+  def max_author
+    @max_author ||= (@entries.map {|e| e[:author].length}).max
+  end
+
+  # a hash of author name => color val
+  def authors
+    @authors ||= begin
+      auths = entries.map {|e| e[:author]}.uniq
+      auths.inject({}) {|acc, a| acc[a] = SvnLog::COLORS.next; acc}
+    end
+  end
+
+  def colorize author, message
+    "\033[0;#{authors[author]}m#{message}\033[0;m"
+  end
+
+  def greenify m
+    "\033[0;32m#{m}\033[0;m"
+  end
+
+  def blueify m
+    "\033[1;34m#{m}\033[1;m"
+  end
+
+  def goldify m
+    "\033[1;33m#{m}\033[1;m"
+  end
+
+  def greyback m
+    "\033[0;40m#{m}\033[0;m"
+  end
+end
+
+svnlog = SvnLog.new
+svnlog.entries.each do |e|
+  name = "%-#{svnlog.max_author}s"
+  printf("%5i:#{ svnlog.colorize(e[:author], name) } %s\n", e[:rev], e[:author], e[:msg])
+end
