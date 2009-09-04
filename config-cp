@@ -1,0 +1,34 @@
+#!/bin/bash
+
+usage() {
+  printf "Copies svn:ignore'd rails configurations from one environment to another.\n\n" >&2
+  printf "Usage: %s /from/dir /to/dir \n\n" $(basename $0) >&2
+  exit 2
+}
+
+if [ -z "$1" ]; then
+  usage
+fi
+if [ -z "$2" ]; then
+  usage
+fi
+
+# remove trailing /
+dirA=$(echo "$1" | sed -e 's,\(.\)/$,\1,')
+dirB=$(echo "$2" | sed -e 's,\(.\)/$,\1,')
+
+PATHS="config/development config/test"
+
+if [ -d $dirA ]; then
+  if [ -d $dirB ]; then
+    for _path in `echo $PATHS`; do
+      for _file in `svn propget svn:ignore $dirA/$_path`; do
+        cp -v $dirA/$_path/$_file $dirB/$_path/$_file
+      done
+    done
+  else
+    echo "$dirB is not a valid directory."
+  fi
+else 
+  echo "$dirA is not a valid directory."
+fi
