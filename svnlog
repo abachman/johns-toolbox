@@ -14,21 +14,22 @@ class SvnLog
 
   def initialize; parse_log; end
 
-  def log_xml 
-    @log_xml ||= `svn log --xml`.chomp
-  end
-
+private
   def parse_log 
     doc, @entries =  Hpricot::XML(log_xml), []
     (doc/:log/:logentry).each do |entry|
       msg = (entry/:msg).text
-      msg = msg.split("\n").first.chomp.slice(0, 60)
+      begin
+        msg = msg.split("\n").first.chomp.slice(0, 80)
+      rescue 
+        msg = ''
+      end
       @entries << {:msg => msg, :author => (entry/:author).text, :rev => entry.attributes['revision']}
     end
   end 
 
-  def max_author
-    @max_author ||= (@entries.map {|e| e[:author].length}).max
+  def log_xml 
+    @log_xml ||= `svn log --xml #{ARGV.join}`.chomp
   end
 
   # a hash of author name => color val
@@ -37,6 +38,11 @@ class SvnLog
       auths = entries.map {|e| e[:author]}.uniq
       auths.inject({}) {|acc, a| acc[a] = SvnLog::COLORS.next; acc}
     end
+  end
+public
+
+  def max_author
+    @max_author ||= (@entries.map {|e| e[:author].length}).max
   end
 
   def colorize author, message
