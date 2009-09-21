@@ -108,22 +108,6 @@ private
     end
   end
 
-  def greenify m
-    "#{COLOR_GREEN}#{m}#{COLOR_NONE}"
-  end
-
-  def blueify m
-    "#{COLOR_BLUE}#{m}#{COLOR_NONE}"
-  end
-
-  def goldify m
-    "#{COLOR_GOLD}#{m}#{COLOR_NONE}"
-  end
-
-  def greyback m
-    "\033[0;40m#{m}#{COLOR_NONE}"
-  end
-
   def color_stat status
     begin
       STATUS_CHECK[status] + COLOR_NONE
