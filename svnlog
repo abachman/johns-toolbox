@@ -64,10 +64,15 @@ public
   def greyback m
     "\033[0;40m#{m}\033[0;m"
   end
-end
 
-svnlog = SvnLog.new
-svnlog.entries.each do |e|
-  name = "%-#{svnlog.max_author}s"
-  printf("%5i:#{ svnlog.colorize(e[:author], name) } %s\n", e[:rev], e[:author], e[:msg])
+  public
+  def display
+    @entries.each do |e|
+      name = "%-#{max_author}s"
+      printf("%5i:#{ colorize(e[:author], name) } %s\n", e[:rev], e[:author], e[:msg])
+    end
+  end
 end
+ 
+svnlog = SvnLog.new
+svnlog.display
