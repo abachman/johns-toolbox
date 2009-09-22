@@ -39,7 +39,7 @@ STATUS_CHECK = {
   'modified'    => COLOR_BLUE   + 'M',
   'added'       => COLOR_GREEN  + 'A',
   'unversioned' => BACK_GREY    + '?',
-  'removed'     => COLOR_PURPLE + 'D',
+  'deleted'     => COLOR_PURPLE + 'D',
   'missing'     => COLOR_RED    + '!'
 }
 
