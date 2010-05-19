@@ -1,0 +1,49 @@
+#!/usr/bin/env ruby
+
+def toggle_hosts
+  in_noprocrast_block = false
+  new_hosts = []
+  toggle = :which
+  count = 0
+
+  File.open('/etc/hosts').lines.each do |line|
+    if /@noprocrast/i =~ line
+      if in_noprocrast_block
+        in_noprocrast_block = false
+      else
+        in_noprocrast_block = true
+        new_hosts << line
+        next  
+      end
+    end
+
+    if !in_noprocrast_block 
+      new_hosts << line
+    else
+      if /^#/ =~ line
+        new_hosts << line.gsub(/#/, '')
+        toggle = :active
+      else
+        new_hosts << "#%s" % line
+        toggle = :inactive
+      end
+      count += 1
+    end
+
+  end
+  
+  puts "NOPROCRAST is #{toggle} for #{count} sites."
+
+  return new_hosts.join()
+end
+
+def get_hosts
+
+end
+
+def add_host
+    
+end
+
+`cp /etc/hosts ~/hosts.$(date +%Y%m%d%H%M%S)`
+`echo "#{toggle_hosts}" > /etc/hosts`

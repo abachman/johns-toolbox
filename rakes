@@ -1,6 +1,6 @@
 #!/bin/bash
 
-while getopts 'dtsp' OPTION
+while getopts 'dtspc' OPTION
 do
   case $OPTION in
   d) denv="development"
@@ -11,6 +11,8 @@ do
     ;;
   p) penv="production"
     ;;
+  c) cenv="cucumber"
+    ;;
   h|?)
     printf "Run rake on multiple RAILS_ENVs.\n\n" >&2
     printf "Usage: %s [-dtsp] tasks\n" $(basename $0) >&2
@@ -19,13 +21,14 @@ do
     printf "\t-t\ttest\n" >&2
     printf "\t-s\tstaging\n" >&2
     printf "\t-p\tproduction\n" >&2
+    printf "\t-c\tcucumber\n" >&2
     exit 2
     ;;
   esac
 done
 shift $(($OPTIND - 1))
 
-for renv in "$denv" "$tenv" "$senv" "$penv"; do
+for renv in "$denv" "$tenv" "$senv" "$penv" "$cenv"; do
   if [ -n "$renv" ]; then
     echo "Running rake tasks [$@] on $renv"
     rake RAILS_ENV=$renv $@
